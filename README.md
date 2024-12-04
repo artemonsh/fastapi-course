@@ -1,1 +1,1 @@
-Видео: https://youtu.be/2foRZS9EBNI
+Видео: https://youtu.be/c6lX6o4dzqQ

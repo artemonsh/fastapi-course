@@ -1,25 +1,24 @@
-from fastapi import FastAPI, Depends, HTTPException, Response
-from authx import AuthX, AuthXConfig
+import time
+import asyncio
 
-app = FastAPI(title="My Base App")
+from fastapi import FastAPI, BackgroundTasks
 
-config = AuthXConfig()
-config.JWT_SECRET_KEY = "SECRET_KEY"
-config.JWT_ACCESS_COOKIE_NAME = "my_access_token"
-config.JWT_TOKEN_LOCATION = ["cookies"]
-
-security = AuthX(config=config)
+app = FastAPI()
 
 
-@app.post('/login')
-def login(username: str, password: str, response: Response):
-    if username == "test" and password == "test":
-        token = security.create_access_token(uid=username)
-        response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
-        return {"access_token": token}
-    raise HTTPException(401, detail={"message": "Bad credentials"})
+def sync_task():
+    time.sleep(3)
+    print("Отправлен email")
 
 
-@app.get("/protected", dependencies=[Depends(security.access_token_required)])
-def get_protected():
-    return {"message": "Hello World"}
+async def async_task():
+    await asyncio.sleep(3)
+    print("Сделан запрос в сторонний API")
+
+
+@app.post("/")
+async def some_route(bg_tasks: BackgroundTasks):
+    ...
+    # asyncio.create_task(async_task())
+    bg_tasks.add_task(sync_task)
+    return {"ok": True}
