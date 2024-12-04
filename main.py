@@ -1,70 +1,25 @@
-from typing import Annotated
-from fastapi import Depends, FastAPI
-from pydantic import BaseModel
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from fastapi import FastAPI, Depends, HTTPException, Response
+from authx import AuthX, AuthXConfig
+
+app = FastAPI(title="My Base App")
+
+config = AuthXConfig()
+config.JWT_SECRET_KEY = "SECRET_KEY"
+config.JWT_ACCESS_COOKIE_NAME = "my_access_token"
+config.JWT_TOKEN_LOCATION = ["cookies"]
+
+security = AuthX(config=config)
 
 
-app = FastAPI()
-
-engine = create_async_engine("sqlite+aiosqlite:///mydb.db", echo=True)
-
-new_async_session = async_sessionmaker(engine, expire_on_commit=False)
-
-
-async def get_session():
-    async with new_async_session() as session:
-        yield session
+@app.post('/login')
+def login(username: str, password: str, response: Response):
+    if username == "test" and password == "test":
+        token = security.create_access_token(uid=username)
+        response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
+        return {"access_token": token}
+    raise HTTPException(401, detail={"message": "Bad credentials"})
 
 
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
-
-class Base(DeclarativeBase):
-    pass
-
-
-class BookModel(Base):
-    __tablename__ = "books"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str]
-    author: Mapped[str]
-
-
-class BookSchema(BaseModel):
-    title: str
-    author: str
-
-
-class BookGetSchema(BaseModel):
-    id: int
-    title: str
-    author: str
-
-
-@app.post("/setup")
-async def setup_database():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-
-
-@app.post("/books")
-async def add_book(book: BookSchema, session: SessionDep) -> BookSchema:
-    new_book = BookModel(
-        title=book.title,
-        author=book.author,
-    )
-    session.add(new_book)
-    await session.commit()
-    return book
-
-
-@app.get("/books")
-async def get_books(session: SessionDep) -> list[BookGetSchema]:
-    query = select(BookModel)
-    result = await session.execute(query)
-    books = result.scalars().all()
-    print(f"{books=}")
-    return books
+@app.get("/protected", dependencies=[Depends(security.access_token_required)])
+def get_protected():
+    return {"message": "Hello World"}
