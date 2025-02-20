@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список книг</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { text-align: center; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 10px; border-bottom: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Список книг</h1>
+    <ul id="book-list">Загрузка...</ul>
+
+    <script>
+        async function fetchBooks() {
+            try {
+                const response = await fetch('http://localhost:8000/books');
+                if (!response.ok) {
+                    throw new Error(`Ошибка: ${response.status}`);
+                }
+                const books = await response.json();
+                const bookList = document.getElementById('book-list');
+                bookList.innerHTML = '';
+
+                books.forEach(book => {
+                    const li = document.createElement('li');
+                    li.textContent = `${book.title} – ${book.author}`;
+                    bookList.appendChild(li);
+                });
+            } catch (error) {
+                document.getElementById('book-list').textContent = 'Ошибка загрузки данных';
+                console.error('Ошибка:', error);
+            }
+        }
+
+        fetchBooks();
+    </script>
+</body>
+</html>
