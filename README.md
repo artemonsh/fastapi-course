@@ -7,4 +7,4 @@
 #### Для перехода на конкретный урок перейдите на другую ветку: 
 Например, вот [ветка 1ого урока](https://github.com/artemonsh/fastapi-course/tree/1_ustanovka_i_zapusk) 
 
-<img src="./docs/branches.png" alt="drawing" width="200"/>
+<img src="./docs/branches.png" alt="drawing" width="300"/>
